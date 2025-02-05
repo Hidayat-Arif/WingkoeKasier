@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasir Wingko Babat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 20px;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .menu-list, .cart-list ul {
+            list-style-type: decimal;
+            padding: 0;
+        }
+        .menu-item, .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .menu-item:last-child, .cart-item:last-child {
+            border-bottom: none;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .cart-list {
+            margin-top: 30px;
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .total {
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .remove-btn {
+            background-color: #e74c3c;
+            padding: 5px 10px;
+        }
+        .remove-btn:hover {
+            background-color: #c0392b;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qz-tray/2.1.0/qz-tray.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Menu Kasir Wingko Babat</h1>
+
+        <ul class="menu-list">
+            <li class="menu-item">
+                <span>Wingko Babat - Rp 35.000</span>
+                <button onclick="addToCart('Wingko Babat', 35000)">Tambah</button>
+            </li>
+            <li class="menu-item">
+                <span>Bakpia Cikwik - Rp 30.000</span>
+                <button onclick="addToCart('Bakpia Cikwik', 30000)">Tambah</button>
+            </li>
+            <li class="menu-item">
+                <span>Pisang Sale - Rp 20.000</span>
+                <button onclick="addToCart('Pisang Sale', 20000)">Tambah</button>
+            </li>
+            <li class="menu-item">
+                <span>Snack 2 Bintang - Rp 13.000</span>
+                <button onclick="addToCart('Snack 2 Bintang', 13000)">Tambah</button>
+            </li>
+        </ul>
+
+        <div class="cart-list">
+            <h3>Daftar Belanja</h3>
+            <ul id="cartItems"></ul>
+        </div>
+
+        <div class="total">
+            Total: Rp <span id="totalAmount">0</span>
+        </div>
+
+        <button onclick="printReceipt()">🖨️ Cetak Struk</button>
+    </div>
+
+    <script>
+        let total = 0;
+        let cart = [];
+
+        function addToCart(itemName, itemPrice) {
+            const existingItem = cart.find(item => item.name === itemName);
+            if (existingItem) {
+                existingItem.quantity++;
+                existingItem.price += itemPrice;
+            } else {
+                cart.push({ name: itemName, price: itemPrice, quantity: 1 });
+            }
+            total += itemPrice;
+            document.getElementById('totalAmount').innerText = total.toLocaleString();
+            displayCart();
+        }
+
+        function displayCart() {
+            const cartItemsContainer = document.getElementById('cartItems');
+            cartItemsContainer.innerHTML = '';
+
+            cart.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.classList.add('cart-item');
+                li.innerHTML = `
+                    <span>${item.name} x${item.quantity}</span>
+                    <span>Rp ${item.price.toLocaleString()}</span>
+                    <button class="remove-btn" onclick="removeFromCart(${index})">Hapus</button>
+                `;
+                cartItemsContainer.appendChild(li);
+            });
+        }
+
+        function removeFromCart(index) {
+            total -= cart[index].price;
+            cart.splice(index, 1);
+            document.getElementById('totalAmount').innerText = total.toLocaleString();
+            displayCart();
+        }
+
+        function printReceipt() {
+            qz.websocket.connect().then(() => {
+                const config = qz.configs.create("Epos"); // Sesuaikan nama printer
+                let receipt = "Wingko Babat Kasir\n-----------------------------\n";
+                cart.forEach(item => {
+                    receipt += `${item.name} x${item.quantity} - Rp ${item.price.toLocaleString()}\n`;
+                });
+                receipt += `-----------------------------\nTotal: Rp ${total.toLocaleString()}\nTerima Kasih!\n\n`;
+
+                const data = [{ type: 'raw', format: 'plain', data: receipt }];
+                return qz.print(config, data);
+            }).catch(console.error);
+        }
+    </script>
+</body>
+</html>
